@@ -51,7 +51,7 @@ resource "aws_launch_configuration" "this" {
   count = "${var.create_lc}"
 
   name_prefix                 = "${local.name_prefix}-"
-  image_id                    = "${var.ecs_cluster_name != "" && var.image_id == "" ? data.aws_ami.ecs.image_id : var.image_id}"
+  image_id                    = "${local.image_id}"
   instance_type               = "${var.instance_type}"
   iam_instance_profile        = "${local.iam_instance_profile}"
   key_name                    = "${var.key_name}"
