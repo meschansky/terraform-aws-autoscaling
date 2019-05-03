@@ -1,17 +1,63 @@
+##########
+# ECS AMI
+##########
+data "aws_ami" "ecs" {
+  most_recent = true
+
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-ecs-hvm-*"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+  owners = ["amazon"]
+}
+
+
+###################################
+# ECS IAM Instance Role and Policy
+###################################
+resource "aws_iam_role" "ecs_instance_role" {
+  count = "${local.create_ecs_instance_profile}"
+  name_prefix        = "ec2-role-${local.name_prefix}-"
+  assume_role_policy = "${var.ecs_instance_role_assume_role_policy}"
+}
+
+resource "aws_iam_role_policy" "ecs_instance_role_policy" {
+  count = "${local.create_ecs_instance_profile}"
+  name_prefix = "ec2-role-policy-${local.name_prefix}-"
+  role   =  "${element(concat(aws_iam_role.ecs_instance_role.*.id, list("")), 0)}"
+  policy = "${var.ecs_instance_role_policy}"
+}
+
+resource "aws_iam_instance_profile" "ecs_instance_profile" {
+  count = "${local.create_ecs_instance_profile}"
+  name_prefix = "ec2-profile-${local.name_prefix}-"
+  path = "/"
+  role = "${element(concat(aws_iam_role.ecs_instance_role.*.name, list("")), 0)}"
+  provisioner "local-exec" {
+    command = "sleep 10"
+  }
+}
+
+
 #######################
 # Launch configuration
 #######################
 resource "aws_launch_configuration" "this" {
   count = "${var.create_lc}"
 
-  name_prefix                 = "${coalesce(var.lc_name, var.name)}-"
-  image_id                    = "${var.image_id}"
+  name_prefix                 = "${local.name_prefix}-"
+  image_id                    = "${var.ecs_cluster_name != "" && var.image_id == "" ? data.aws_ami.ecs.image_id : var.image_id}"
   instance_type               = "${var.instance_type}"
-  iam_instance_profile        = "${var.iam_instance_profile}"
+  iam_instance_profile        = "${local.iam_instance_profile}"
   key_name                    = "${var.key_name}"
   security_groups             = ["${var.security_groups}"]
   associate_public_ip_address = "${var.associate_public_ip_address}"
-  user_data                   = "${var.user_data}"
+  user_data                   = "${local.user_data}"
   enable_monitoring           = "${var.enable_monitoring}"
   spot_price                  = "${var.spot_price}"
   placement_tenancy           = "${var.spot_price == "" ? var.placement_tenancy : ""}"
@@ -31,7 +77,7 @@ resource "aws_launch_configuration" "this" {
 resource "aws_autoscaling_group" "this" {
   count = "${var.create_asg && !var.create_asg_with_initial_lifecycle_hook ? 1 : 0}"
 
-  name_prefix          = "${join("-", compact(list(coalesce(var.asg_name, var.name), var.recreate_asg_when_lc_changes ? element(concat(random_pet.asg_name.*.id, list("")), 0) : "")))}-"
+  name_prefix          = "${join("-", compact(list(local.name_prefix, var.recreate_asg_when_lc_changes ? element(concat(random_pet.asg_name.*.id, list("")), 0) : "")))}-"
   launch_configuration = "${var.create_lc ? element(concat(aws_launch_configuration.this.*.name, list("")), 0) : var.launch_configuration}"
   vpc_zone_identifier  = ["${var.vpc_zone_identifier}"]
   max_size             = "${var.max_size}"
@@ -72,7 +118,7 @@ resource "aws_autoscaling_group" "this" {
 resource "aws_autoscaling_group" "this_with_initial_lifecycle_hook" {
   count = "${var.create_asg && var.create_asg_with_initial_lifecycle_hook ? 1 : 0}"
 
-  name_prefix          = "${join("-", compact(list(coalesce(var.asg_name, var.name), var.recreate_asg_when_lc_changes ? element(concat(random_pet.asg_name.*.id, list("")), 0) : "")))}-"
+  name_prefix          = "${join("-", compact(list(local.name_prefix, var.recreate_asg_when_lc_changes ? element(concat(random_pet.asg_name.*.id, list("")), 0) : "")))}-"
   launch_configuration = "${var.create_lc ? element(aws_launch_configuration.this.*.name, 0) : var.launch_configuration}"
   vpc_zone_identifier  = ["${var.vpc_zone_identifier}"]
   max_size             = "${var.max_size}"

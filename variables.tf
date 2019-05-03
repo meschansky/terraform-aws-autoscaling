@@ -74,7 +74,7 @@ variable "launch_configuration" {
 
 # Launch configuration
 variable "image_id" {
-  description = "The EC2 image ID to launch"
+  description = "The EC2 image ID to launch. If empty and ecs_cluster_name is specified then the latest ECS image is used "
   default     = ""
 }
 
@@ -260,4 +260,59 @@ variable "wait_for_elb_capacity" {
 variable "protect_from_scale_in" {
   description = "Allows setting instance protection. The autoscaling group will not select instances with this setting for termination during scale in events."
   default     = false
+}
+
+variable "ecs_cluster_name" {
+  description = "An ECS cluster name to associate the autoscaling group with (via user data script)"
+  default = ""
+}
+
+variable "ecs_instance_role_assume_role_policy" {
+  type = "string"
+
+  default = <<EOF
+{
+  "Version": "2008-10-17",
+  "Statement": [
+    {
+      "Sid": "",
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "ec2.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+EOF
+}
+
+variable "ecs_instance_role_policy" {
+  type = "string"
+
+  default = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ecs:DeregisterContainerInstance",
+        "ecs:DiscoverPollEndpoint",
+        "ecs:Poll",
+        "ecs:RegisterContainerInstance",
+        "ecs:StartTelemetrySession",
+        "ecs:Submit*",
+        "ecr:GetAuthorizationToken",
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:BatchGetImage",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+EOF
 }
