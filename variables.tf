@@ -267,6 +267,12 @@ variable "ecs_cluster_name" {
   default = ""
 }
 
+variable "ecs_custom_attrs" {
+  description = "Attributes to be added to an instance, which could be used for task placement constraints (default: {})"
+  type = "map"
+  default = {}
+}
+
 variable "ecs_instance_role_assume_role_policy" {
   type = "string"
 

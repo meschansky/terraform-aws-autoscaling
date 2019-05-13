@@ -47,6 +47,14 @@ resource "aws_iam_instance_profile" "ecs_instance_profile" {
 #######################
 # Launch configuration
 #######################
+data "template_file" "ecs_user_data" {
+  template = "${file("${path.module}/default-user-data.sh")}"
+  vars {
+    ecs_cluster_name = "${var.ecs_cluster_name}"
+    ecs_custom_attrs_json = "${jsonencode(var.ecs_custom_attrs)}"
+  }
+}
+
 resource "aws_launch_configuration" "this" {
   count = "${var.create_lc}"
 
