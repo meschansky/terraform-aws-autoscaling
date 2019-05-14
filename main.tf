@@ -164,16 +164,20 @@ resource "aws_autoscaling_group" "this" {
   # If the expression in the following list itself returns a list, remove the
   # brackets to avoid interpretation as a list of lists. If the expression
   # returns a single list item then leave it as-is and remove this TODO comment.
-  tags = flatten([
-          {
-            "key"                 = "Name"
-            "value"               = var.name
-            "propagate_at_launch" = true
-          },
-          local.tags_asg_format,
-        ]
-  )
 
+  tag {
+    key = "Name"
+    value = var.name
+    propagate_at_launch = true
+  }
+  dynamic "tag" {
+        for_each = var.tags_as_map
+        content {
+          key                 = tag.key
+          value               = tag.value
+           propagate_at_launch = true
+        }
+  }
 
   lifecycle {
     create_before_destroy = true
@@ -236,19 +240,19 @@ resource "aws_autoscaling_group" "this_with_initial_lifecycle_hook" {
   # If the expression in the following list itself returns a list, remove the
   # brackets to avoid interpretation as a list of lists. If the expression
   # returns a single list item then leave it as-is and remove this TODO comment.
-  tags = [
-    concat(
-      [
-        {
-          "key"                 = "Name"
-          "value"               = var.name
-          "propagate_at_launch" = true
-        },
-      ],
-      var.tags,
-      local.tags_asg_format,
-    ),
-  ]
+  tag {
+    key = "Name"
+    value = var.name
+    propagate_at_launch = true
+  }
+  dynamic "tag" {
+    for_each = var.tags_as_map
+    content {
+      key                 = tag.key
+      value               = tag.value
+      propagate_at_launch = true
+    }
+  }
 
   lifecycle {
     create_before_destroy = true
