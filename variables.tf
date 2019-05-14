@@ -95,7 +95,7 @@ variable "key_name" {
 
 variable "security_groups" {
   description = "A list of security group IDs to assign to the launch configuration"
-  type        = "list"
+  type        = list(string)
   default     = []
 }
 
@@ -121,19 +121,19 @@ variable "ebs_optimized" {
 
 variable "root_block_device" {
   description = "Customize details about the root block device of the instance"
-  type        = "list"
+  type        = list(map(string))
   default     = []
 }
 
 variable "ebs_block_device" {
   description = "Additional EBS block devices to attach to the instance"
-  type        = "list"
+  type        = list(map(string))
   default     = []
 }
 
 variable "ephemeral_block_device" {
   description = "Customize Ephemeral (also known as 'Instance Store') volumes on the instance"
-  type        = "list"
+  type        = list(string)
   default     = []
 }
 
@@ -162,7 +162,7 @@ variable "desired_capacity" {
 
 variable "vpc_zone_identifier" {
   description = "A list of subnet IDs to launch resources in"
-  type        = "list"
+  type        = list(string)
 }
 
 variable "default_cooldown" {
@@ -196,7 +196,7 @@ variable "target_group_arns" {
 
 variable "termination_policies" {
   description = "A list of policies to decide how the instances in the auto scale group should be terminated. The allowed values are OldestInstance, NewestInstance, OldestLaunchConfiguration, ClosestToNextInstanceHour, Default"
-  type        = "list"
+  type        = list(string)
   default     = ["Default"]
 }
 
@@ -212,8 +212,9 @@ variable "tags" {
 
 variable "tags_as_map" {
   description = "A map of tags and values in the same format as other resources accept. This will be converted into the non-standard format that the aws_autoscaling_group requires."
-  type        = "map"
-  default     = {}
+  type        = map(string)
+  default = {
+  }
 }
 
 variable "placement_group" {
@@ -228,7 +229,7 @@ variable "metrics_granularity" {
 
 variable "enabled_metrics" {
   description = "A list of metrics to collect. The allowed values are GroupMinSize, GroupMaxSize, GroupDesiredCapacity, GroupInServiceInstances, GroupPendingInstances, GroupStandbyInstances, GroupTerminatingInstances, GroupTotalInstances"
-  type        = "list"
+  type        = list(string)
 
   default = [
     "GroupMinSize",
@@ -253,6 +254,7 @@ variable "min_elb_capacity" {
 }
 
 variable "wait_for_elb_capacity" {
+  type = bool
   description = "Setting this will cause Terraform to wait for exactly this number of healthy instances in all attached load balancers on both create and update operations. Takes precedence over min_elb_capacity behavior."
   default     = false
 }
@@ -264,17 +266,18 @@ variable "protect_from_scale_in" {
 
 variable "ecs_cluster_name" {
   description = "An ECS cluster name to associate the autoscaling group with (via user data script)"
-  default = ""
+  default     = ""
 }
 
 variable "ecs_custom_attrs" {
   description = "Attributes to be added to an instance, which could be used for task placement constraints (default: {})"
-  type = "map"
-  default = {}
+  type        = map(string)
+  default = {
+  }
 }
 
 variable "ecs_instance_role_assume_role_policy" {
-  type = "string"
+  type = string
 
   default = <<EOF
 {
@@ -291,10 +294,11 @@ variable "ecs_instance_role_assume_role_policy" {
   ]
 }
 EOF
+
 }
 
 variable "ecs_instance_role_policy" {
-  type = "string"
+  type = string
 
   default = <<EOF
 {
@@ -321,4 +325,6 @@ variable "ecs_instance_role_policy" {
   ]
 }
 EOF
+
 }
+
